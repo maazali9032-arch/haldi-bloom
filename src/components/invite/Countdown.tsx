@@ -24,13 +24,7 @@ export function Countdown({ target: targetDate, lang }: { target: Date; lang: La
     return () => window.clearInterval(id);
   }, [target]);
 
-  if (state?.done) {
-    return (
-      <p lang={lang} className="text-center text-lg text-kumkum">
-        {t("celebrationBegun", lang)}
-      </p>
-    );
-  }
+  if (state?.done) return null;
 
   const cells = [
     { value: state?.days, label: t("days", lang) },

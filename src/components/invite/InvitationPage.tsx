@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MapPin, Clock, CalendarDays } from "lucide-react";
 import { LANGUAGES, DEFAULT_LANGUAGE, type LanguageCode } from "@/lib/languages";
-import { formatDate, formatTime, formatTimeString, t } from "@/lib/i18n";
+import { formatDate, formatTimeString, t } from "@/lib/i18n";
 import { useParallax } from "@/hooks/use-scroll-motion";
 import {
   normalizeContacts,
@@ -17,6 +17,7 @@ import { MusicToggle } from "./MusicToggle";
 import { Countdown } from "./Countdown";
 import { ContactSection } from "./ContactSection";
 import { Reveal } from "./Reveal";
+import { BrandRibbon } from "./BrandRibbon";
 
 import paper from "@/assets/paper.jpg";
 import garland from "@/assets/garland.png";
@@ -25,7 +26,13 @@ import hands from "@/assets/hands.png";
 import leaves from "@/assets/leaves.png";
 import petals from "@/assets/petals.png";
 
-export function InvitationPage({ content }: { content: InvitationContent }) {
+export function InvitationPage({
+  content,
+  brandName,
+}: {
+  content: InvitationContent;
+  brandName?: string | undefined;
+}) {
   const [lang, setLang] = useState<LanguageCode>(DEFAULT_LANGUAGE);
   const [requestPlay, setRequestPlay] = useState(false);
 
@@ -75,7 +82,7 @@ export function InvitationPage({ content }: { content: InvitationContent }) {
   ].filter((p) => p.photo || p.qualification || p.occupation || p.parents);
   const relatives = str(content.relatives);
 
-  const musicUrl = content.music_enabled ? safeHttpUrl(str(content.music_url)) : undefined;
+  const musicUrl = content.music_enabled === true ? safeHttpUrl(str(content.music_url)) : undefined;
   const countdownTarget = weddingAt && weddingAt.getTime() > Date.now() ? weddingAt : null;
 
   return (
@@ -107,7 +114,7 @@ export function InvitationPage({ content }: { content: InvitationContent }) {
       <section
         aria-labelledby="invite-heading"
         onClick={() => musicUrl && setRequestPlay(true)}
-        className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-5 pb-24 pt-40 text-center sm:px-8 sm:pt-32"
+        className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-5 pb-24 pt-[max(12rem,65vw)] text-center sm:px-8 sm:pt-[max(14rem,45vw)] lg:pt-[max(14rem,35vw)]"
       >
         <div
           className="wash pointer-events-none absolute inset-0"
@@ -165,7 +172,7 @@ export function InvitationPage({ content }: { content: InvitationContent }) {
           className="pointer-events-none absolute -bottom-10 -left-16 w-56 rotate-12 opacity-70 sm:w-72 lg:-left-6 lg:w-96"
         />
 
-        <Reveal className="relative z-10 max-w-2xl">
+        <Reveal className="relative z-10 w-full max-w-2xl">
           {invocation ? (
             <p className="mx-auto mb-6 max-w-lg text-pretty font-display text-base leading-relaxed text-foreground/85 sm:text-lg">
               {invocation}
@@ -181,15 +188,15 @@ export function InvitationPage({ content }: { content: InvitationContent }) {
           {/* Names on three centred lines; the ampersand always stands alone. */}
           <h1
             id="invite-heading"
-            className="mt-6 flex flex-col items-center font-display text-[clamp(2.4rem,12vw,5.5rem)] leading-[1.02] text-kumkum"
+            className="mt-6 flex flex-col items-center break-words font-display text-[clamp(2.4rem,12vw,5.5rem)] leading-[1.02] text-kumkum [overflow-wrap:anywhere]"
           >
-            {groomName ? <span className="block">{groomName}</span> : null}
+            {groomName ? <span className="block max-w-full">{groomName}</span> : null}
             {groomName && brideName ? (
               <span className="my-2 block text-[0.42em] text-marigold" aria-hidden="true">
                 &amp;
               </span>
             ) : null}
-            {brideName ? <span className="block">{brideName}</span> : null}
+            {brideName ? <span className="block max-w-full">{brideName}</span> : null}
           </h1>
 
           <span aria-hidden="true" className="ink-rule mx-auto mt-6 block w-40" />
@@ -199,10 +206,12 @@ export function InvitationPage({ content }: { content: InvitationContent }) {
               {formatDate(weddingDay, lang)}
             </p>
           ) : null}
-          {startTime ? (
+          {startTime || endTime ? (
             <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-              {formatTimeString(startTime, lang)}
-              {endTime ? ` – ${formatTimeString(endTime, lang)}` : ""}
+              {[startTime, endTime]
+                .filter((value): value is string => Boolean(value))
+                .map((value) => formatTimeString(value, lang))
+                .join(" – ")}
             </p>
           ) : null}
         </Reveal>
@@ -499,12 +508,8 @@ export function InvitationPage({ content }: { content: InvitationContent }) {
             {[groomName, brideName].filter(Boolean).join(" & ")}
           </p>
         ) : null}
-        {weddingAt ? (
-          <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            {formatTime(weddingAt, lang)}
-          </p>
-        ) : null}
       </footer>
+      <BrandRibbon name={brandName} />
     </main>
   );
 }

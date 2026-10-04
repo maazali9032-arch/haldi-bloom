@@ -64,8 +64,16 @@ export const ui: Record<UiKey, LocalizedText> = {
   whatsapp: { en: "WhatsApp", hi: "व्हाट्सएप", te: "వాట్సాప్" },
   couple: { en: "The Couple", hi: "वर-वधू", te: "వధూవరులు" },
   parents: { en: "Parents", hi: "माता-पिता", te: "తల్లిదండ్రులు" },
-  relatives: { en: "With love from the family", hi: "परिवार के स्नेह सहित", te: "కుటుంబ ఆప్యాయతతో" },
-  loading: { en: "Opening your invitation…", hi: "निमंत्रण खुल रहा है…", te: "ఆహ్వానం తెరుస్తోంది…" },
+  relatives: {
+    en: "With love from the family",
+    hi: "परिवार के स्नेह सहित",
+    te: "కుటుంబ ఆప్యాయతతో",
+  },
+  loading: {
+    en: "Opening your invitation…",
+    hi: "निमंत्रण खुल रहा है…",
+    te: "ఆహ్వానం తెరుస్తోంది…",
+  },
   retry: { en: "Try again", hi: "पुनः प्रयास करें", te: "మళ్లీ ప్రయత్నించండి" },
   notFoundTitle: { en: "Invitation not found", hi: "निमंत्रण नहीं मिला", te: "ఆహ్వానం కనబడలేదు" },
   notFoundBody: {
@@ -130,8 +138,11 @@ export function formatTime(date: Date, lang: LanguageCode): string {
 
 /** Render a raw time string ("18:30") in a friendly form; falls back to the input. */
 export function formatTimeString(time: string, lang: LanguageCode): string {
-  const match = /^(\d{1,2}):(\d{2})/.exec(time.trim());
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i.exec(time.trim());
   if (!match) return time;
-  const date = new Date(Date.UTC(2000, 0, 1, Number(match[1]) - 5, Number(match[2]) - 30));
+  let hour = Number(match[1]);
+  if (Number(match[2]) > 59 || (match[3] ? hour < 1 || hour > 12 : hour > 23)) return time;
+  if (match[3]) hour = (hour % 12) + (match[3].toUpperCase() === "PM" ? 12 : 0);
+  const date = new Date(Date.UTC(2000, 0, 1, hour - 5, Number(match[2]) - 30));
   return formatTime(date, lang);
 }

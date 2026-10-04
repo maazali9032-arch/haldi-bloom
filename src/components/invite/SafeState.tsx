@@ -5,6 +5,7 @@ import type { ShopFallback } from "@/lib/public-invitation";
 import { safeHttpUrl, str } from "@/lib/public-invitation";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import leaves from "@/assets/leaves.png";
+import { BrandRibbon } from "./BrandRibbon";
 
 /**
  * Loading / not-found / fallback / request-error screens, all in the same
@@ -14,10 +15,12 @@ export function SafeState({
   variant,
   shop,
   onRetry,
+  staticPage = false,
 }: {
   variant: "loading" | "not-found" | "fallback" | "error";
   shop?: ShopFallback | undefined;
   onRetry?: (() => void) | undefined;
+  staticPage?: boolean;
 }) {
   const [lang, setLang] = useState<LanguageCode>("en");
 
@@ -56,9 +59,11 @@ export function SafeState({
         height={1024}
         className="pointer-events-none absolute -right-16 -top-16 w-64 opacity-25 sm:w-80"
       />
-      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
-        <LanguageSwitcher languages={LANGUAGES} value={lang} onChange={setLang} />
-      </div>
+      {!staticPage ? (
+        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+          <LanguageSwitcher languages={LANGUAGES} value={lang} onChange={setLang} />
+        </div>
+      ) : null}
 
       <div className="max-w-md" role="status" aria-live="polite">
         <span aria-hidden="true" className="mx-auto block h-px w-16 bg-border" />
@@ -82,7 +87,8 @@ export function SafeState({
           </button>
         ) : null}
 
-        {variant === "fallback" && (shopName || shopPhone || shopAddress || shopCity || shopBusiness) ? (
+        {variant === "fallback" &&
+        (shopName || shopPhone || shopWhatsapp || shopAddress || shopCity || shopBusiness) ? (
           <div className="mt-10 rounded-xl border border-border/60 bg-card/70 p-5 text-sm backdrop-blur-[2px]">
             {shopName ? <p className="font-display text-lg text-kumkum">{shopName}</p> : null}
             {shopBusiness ? <p className="mt-1 text-muted-foreground">{shopBusiness}</p> : null}
@@ -112,6 +118,7 @@ export function SafeState({
           </div>
         ) : null}
       </div>
+      {variant === "fallback" ? <BrandRibbon name={shopName} /> : null}
     </main>
   );
 }

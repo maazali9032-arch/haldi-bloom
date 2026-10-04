@@ -93,6 +93,7 @@ export interface PublicInvitationResponse {
   content?: InvitationContent;
   detail?: Record<string, unknown>;
   shop?: ShopFallback;
+  brandName?: string | undefined;
 }
 
 /* ── slug ─────────────────────────────────────────────────────── */
@@ -123,7 +124,7 @@ export const str = (v: unknown): string | undefined => {
   return s ? s : undefined;
 };
 
-export const list = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+export const list = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
 /** Unwrap the optional `{ data: ... }` envelope and validate the shape. */
 export function normalizeResponse(raw: unknown): PublicInvitationResponse {
@@ -131,19 +132,38 @@ export function normalizeResponse(raw: unknown): PublicInvitationResponse {
   if (Array.isArray(node)) node = node[0];
   if (isObject(node) && !("state" in node) && "data" in node) node = node["data"];
   if (Array.isArray(node)) node = node[0];
-  if (!isObject(node)) return { state: "not_found" };
+  if (!isObject(node)) throw new Error("Invalid public invitation response");
 
   const state = node["state"];
-  if (state !== "live" && state !== "fallback") return { state: "not_found" };
+  if (state === "not_found") return { state: "not_found" };
+  if (state !== "live" && state !== "fallback") throw new Error("Invalid public invitation state");
 
   const invitation = isObject(node["invitation"]) ? node["invitation"] : undefined;
   const result: PublicInvitationResponse = { state };
   if (state === "live") {
-    if (invitation) result.invitation = { ...(str(invitation["public_url"]) ? { public_url: str(invitation["public_url"])! } : {}) };
-    if (isObject(node["content"])) result.content = node["content"] as InvitationContent;
-    if (isObject(node["detail"])) result.detail = node["detail"] as Record<string, unknown>;
+    // Only the approved public shop name is retained during live rendering.
+    if (isObject(node["shop"])) result.brandName = str(node["shop"]["name"]);
+    if (invitation)
+      result.invitation = {
+        ...(str(invitation["public_url"]) ? { public_url: str(invitation["public_url"])! } : {}),
+      };
+    if (!isObject(node["content"])) throw new Error("Invalid public invitation content");
+    result.content = node["content"] as InvitationContent;
+    // Design-specific detail is not consumed or serialized into the page.
   } else if (isObject(node["shop"])) {
-    result.shop = node["shop"] as ShopFallback;
+    const shop: ShopFallback = {};
+    for (const field of [
+      "name",
+      "phone",
+      "whatsapp",
+      "address",
+      "city",
+      "business_contact",
+    ] as const) {
+      const value = str(node["shop"][field]);
+      if (value) shop[field] = value;
+    }
+    result.shop = shop;
   }
   return result;
 }
@@ -161,6 +181,7 @@ export async function fetchPublicInvitation(slug: string): Promise<PublicInvitat
     `${url.replace(/\/$/, "")}/rest/v1/rpc/get_public_invitation_content`,
     {
       method: "POST",
+      signal: AbortSignal.timeout(15000),
       headers: {
         apikey: key,
         Authorization: `Bearer ${key}`,
@@ -241,14 +262,15 @@ export interface RenderableContact {
 
 export function normalizeContacts(content: InvitationContent | undefined): RenderableContact[] {
   return list<unknown>(content?.contacts)
-    .filter(isObject)
     .slice(0, 2)
+    .filter(isObject)
     .map((raw): RenderableContact | null => {
       const c = raw as PublicContact;
       const phone = str(c.phone);
       if (!phone) return null;
       const digits = phone.replace(/\D/g, "");
-      const whatsappUrl = safeHttpUrl(str(c.whatsapp_url)) ?? (digits ? `https://wa.me/${digits}` : undefined);
+      const whatsappUrl =
+        safeHttpUrl(str(c.whatsapp_url)) ?? (digits ? `https://wa.me/${digits}` : undefined);
       const name = str(c.name);
       return { phone, ...(name ? { name } : {}), ...(whatsappUrl ? { whatsappUrl } : {}) };
     })
@@ -270,18 +292,32 @@ export function safeHttpUrl(value: string | undefined): string | undefined {
 export function toDateTime(date: string | undefined, time?: string | undefined): Date | null {
   const d = str(date);
   if (!d) return null;
-  const t = str(time);
-  const candidates = t ? [`${d}T${normalizeTime(t)}`, d] : [d];
-  for (const candidate of candidates) {
-    const parsed = new Date(candidate);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    const calendar = new Date(`${d}T00:00:00Z`);
+    if (Number.isNaN(calendar.getTime()) || calendar.toISOString().slice(0, 10) !== d) return null;
+    const rawTime = str(time);
+    const clock = rawTime ? normalizeTime(rawTime) : "00:00:00";
+    if (!clock) return null;
+    // The design formats all dates in India time; parse them in that same zone.
+    return new Date(`${d}T${clock}+05:30`);
   }
-  return null;
+  if (str(time)) return null;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/.test(d))
+    return null;
+  const parsed = new Date(d);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function normalizeTime(time: string): string {
-  const match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(time.trim());
-  if (!match) return "00:00:00";
-  const h = String(Number(match[1])).padStart(2, "0");
-  return `${h}:${match[2]}:${match[3] ?? "00"}`;
+function normalizeTime(time: string): string | null {
+  const match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i.exec(time.trim());
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const second = Number(match[3] ?? 0);
+  if (minute > 59 || second > 59) return null;
+  if (match[4]) {
+    if (hour < 1 || hour > 12) return null;
+    hour = (hour % 12) + (match[4].toUpperCase() === "PM" ? 12 : 0);
+  } else if (hour > 23) return null;
+  return `${String(hour).padStart(2, "0")}:${match[2]}:${String(second).padStart(2, "0")}`;
 }

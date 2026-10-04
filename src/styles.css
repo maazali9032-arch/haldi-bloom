@@ -4,6 +4,48 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.brand-ribbon {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 40;
+  height: clamp(10px, 1.8dvh, 18px);
+  overflow: hidden;
+  border-top: 1px solid color-mix(in oklab, var(--kumkum) 18%, transparent);
+  background: color-mix(in oklab, var(--background) 45%, transparent);
+  color: var(--kumkum);
+  font-family: var(--font-display);
+  font-size: clamp(8px, 1.3dvh, 11px);
+  pointer-events: none;
+}
+
+.brand-ribbon-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  align-items: center;
+  animation: brand-marquee 36s linear infinite;
+}
+
+.brand-ribbon-group {
+  display: flex;
+  justify-content: space-around;
+  flex-shrink: 0;
+  min-width: 100vw;
+  white-space: nowrap;
+}
+
+@keyframes brand-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-ribbon-track {
+    animation: none;
+  }
+}
+
 /*
  * Haldi invitation design system — hand-painted watercolour palette.
  * All colour values are oklch and exposed as semantic tokens.

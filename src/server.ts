@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { notFoundResponse } from "./lib/not-found-response";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -46,6 +47,13 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // Router decoding can reject malformed escapes before the slug loader runs.
+    // Return the same themed not-found screen without issuing an RPC request.
+    try {
+      decodeURIComponent(new URL(request.url).pathname);
+    } catch {
+      return notFoundResponse();
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
