@@ -110,6 +110,8 @@ export function InvitationPage({
         ) : null}
       </div>
 
+      <div className="relative z-[60]">
+
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section
         aria-labelledby="invite-heading"
@@ -127,7 +129,7 @@ export function InvitationPage({
           aria-hidden="true"
           width={1920}
           height={640}
-          className="pointer-events-none absolute -top-2 left-1/2 w-[190%] max-w-none -translate-x-1/2 opacity-95 sm:w-[130%] lg:w-full"
+          className="pointer-events-none absolute -top-2 left-1/2 w-[190%] max-w-none -translate-x-1/2 opacity-0 sm:w-[130%] lg:w-full"
         />
         <div
           ref={petalsLayer as never}
@@ -169,7 +171,7 @@ export function InvitationPage({
           width={1024}
           height={1024}
           data-parallax=""
-          className="pointer-events-none absolute -bottom-10 -left-16 w-56 rotate-12 opacity-70 sm:w-72 lg:-left-6 lg:w-96"
+          className="pointer-events-none absolute -bottom-10 -left-16 w-56 rotate-12 opacity-0 sm:w-72 lg:-left-6 lg:w-96"
         />
 
         <Reveal className="relative z-10 w-full max-w-2xl">
@@ -224,7 +226,8 @@ export function InvitationPage({
           width={1024}
           height={1024}
           data-parallax=""
-          className="pointer-events-none relative z-0 mt-8 w-52 max-w-[62vw] drop-shadow-sm sm:w-64 lg:w-72"
+          className="pointer-events-none relative z-0 mt-8 w-52 max-w-[62vw] drop-shadow-sm opacity-0 sm:w-64 lg:w-72"
+          // className="pointer-events-none relative z-0 mt-8 w-52 max-w-[62vw] drop-shadow-sm sm:w-64 lg:w-72"
         />
 
         <span
@@ -301,7 +304,8 @@ export function InvitationPage({
               width={1024}
               height={1024}
               data-parallax=""
-              className="w-64 max-w-[78vw] sm:w-80 lg:w-[26rem]"
+              className="w-64 max-w-[78vw] opacity-0 sm:w-80 lg:w-[26rem]"
+              // className="w-64 max-w-[78vw] sm:w-80 lg:w-[26rem]"
             />
           </Reveal>
         </section>
@@ -501,7 +505,7 @@ export function InvitationPage({
           loading="lazy"
           width={1920}
           height={640}
-          className="pointer-events-none mx-auto w-[170%] max-w-none rotate-180 opacity-80 sm:w-[120%] lg:w-full"
+          className="pointer-events-none mx-auto w-[170%] max-w-none rotate-180 opacity-0 sm:w-[120%] lg:w-full"
         />
         {groomName || brideName ? (
           <p className="mt-8 font-display text-lg text-kumkum">
@@ -510,6 +514,7 @@ export function InvitationPage({
         ) : null}
       </footer>
       <BrandRibbon name={brandName} />
+      </div>
     </main>
   );
 }

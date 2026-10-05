@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { InvitationPage } from "@/components/invite/InvitationPage";
+import decorativeFrame from "@/assets/decorative-frame.webp";
 import { SafeState } from "@/components/invite/SafeState";
 import {
   fetchPublicInvitation,
@@ -74,7 +75,17 @@ function SlugPage() {
     );
   const { data } = result;
   if (data.state === "live" && data.content)
-    return <InvitationPage key={slug} content={data.content} brandName={data.brandName} />;
+    return (
+      <div className="relative min-h-screen">
+        <InvitationPage key={slug} content={data.content} brandName={data.brandName} />
+        <img
+          src={decorativeFrame}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-50 hidden h-screen w-screen scale-110 object-fill opacity-70 max-[684px]:block"
+        />
+      </div>
+    );
   if (data.state === "fallback") return <SafeState variant="fallback" shop={data.shop} />;
   return <SafeState variant="not-found" />;
 }
